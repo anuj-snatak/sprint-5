@@ -72,7 +72,7 @@ Using shared libraries solves these problems by:
 
 ---
 
-## 5. 🗃 Directory Structure
+## 5.  Directory Structure
 
 ```
 (shared-library-repo)
