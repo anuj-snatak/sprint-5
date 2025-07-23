@@ -1,154 +1,223 @@
 
-#  Jenkins Shared Library: Complete Beginner-Friendly Documentation
+#  Jenkins Shared Library: Documentation
 
-## Version History
+## Author Details
 
 | Author      | Created on | Version   | Last updated by | Internal Reviewer |
 |-------------|------------|-----------|------------------|--------------------|
 | Anuj Jain   | 17-07-25   | version 1 | N/A              | Prashnat           |
 
----
-
 
 ##  Table of Contents
 
-1. [What is a Shared Library?](#what-is-a-shared-library)
-2. [Why Use Shared Libraries?](#why-use-shared-libraries)
-3. [Structure of Shared Library](#structure-of-shared-library)
-4. [Creating a Shared Library](#creating-a-shared-library)
-5. [Using Shared Library in Jenkinsfile](#using-shared-library-in-jenkinsfile)
-6. [Best Practices](#best-practices)
-7. [Conclusion](#conclusion)
+1. [Overview](#1-overview)
+2. [Why Use Shared Libraries](#2-why-use-shared-libraries)
+3. [Advantages](#3-advantages)
+4. [Disadvantages](#4-disadvantages)
+5. [Directory Structure](#5-directory-structure)
+6. [Workflow](#6-workflow)
+7. [Key Concepts — `vars/` vs `src/`](#7-key-concepts--varsvs-src)
+8. [Best Practices](#8-best-practices)
+9. [Sample Usage](#9-sample-usage)
+10. [Conclusion](#10-conclusion)
+11. [Contact Information](#11-contact-information)
+12. [References](#12-references)
 
 ---
 
-## What is a Shared Library?
+## 1.  Overview
 
-A **Jenkins Shared Library** is a reusable set of Groovy scripts and steps that can be shared across multiple Jenkins pipelines. Instead of duplicating common pipeline logic across many Jenkinsfiles, you can write it once in a shared library and call it anywhere.
-
-Think of it as a **custom plugin or module** for Jenkins pipelines.
+**Jenkins Shared Libraries** allow DevOps teams to extract common pipeline code into a reusable Git repository. This makes Jenkinsfiles modular, clean, and DRY (Don't Repeat Yourself). These libraries are written in Groovy and follow a specific directory structure to expose pipeline steps or utility classes.
 
 ---
 
-## Why Use Shared Libraries?
+## 2.  Why Use Shared Libraries
 
-| Advantage          | Description                                     |
-| ------------------ | ----------------------------------------------- |
-|  DRY Code         | Write once, use in multiple pipelines           |
-|  Maintainability | Easy to fix/change logic in one place           |
-|  Modularity      | Better structure for CI/CD pipelines            |
-|  Collaboration   | Team members can contribute to a common library |
+Without shared libraries, each project maintains its own Jenkinsfile logic. As teams grow, this leads to:
+
+* Code duplication
+* Inconsistent CI/CD patterns
+* Hard-to-maintain pipelines
+
+Using shared libraries solves these problems by:
+
+* Promoting reusability
+* Enforcing standards
+* Centralizing updates
+* Enabling version control
 
 ---
 
-##  Structure of Shared Library
+## 3.  Advantages
 
-Here's how a shared library project typically looks:
+| Benefit                | Description                                                             |
+| ---------------------- | ----------------------------------------------------------------------- |
+|  **Reusable**        | Define once, use across projects.                                       |
+|  **Standardized**    | Uniform CI/CD across teams.                                             |
+|  **Clean Pipelines** | Jenkinsfiles stay short and readable.                                   |
+|  **Version Control** | Use tags/branches for different versions.                               |
+|  **Testable Code**   | Integrate unit testing using `JenkinsPipelineUnit`.                     |
+|  **Secure**          | Secrets, sensitive logic can be abstracted away from project pipelines. |
+
+---
+
+## 4.  Disadvantages
+
+| Limitation                 | Description                                                                |
+| -------------------------- | -------------------------------------------------------------------------- |
+|  **Initial Complexity**  | Requires Jenkins config and directory setup.                               |
+|  **Debugging Difficult** | Harder to debug abstracted logic compared to inline pipelines.             |
+|  **Learning Curve**      | Requires understanding of Groovy, Jenkins internals, directory structure.  |
+|  **Strict Versioning**   | Breaking changes in shared lib can affect many jobs if not versioned well. |
+
+---
+
+## 5. 🗃 Directory Structure
 
 ```
-(root)
+(shared-library-repo)
 ├── vars/
-│   └── hello.groovy       # Simple step function
+│   └── deployApp.groovy      # Global pipeline steps
+│   └── deployApp.txt         # Optional documentation
 ├── src/
-│   └── org/example/
-│       └── MyUtils.groovy # Helper classes
+│   └── org/
+│       └── company/
+│           └── utils/
+│               └── DockerHelper.groovy
 ├── resources/
-│   └── templates/
-│       └── message.txt    # External resources like text, yaml, etc.
+│   └── org/company/templates/email.html
+├── test/
+│   └── org/company/DockerHelperTest.groovy
 └── README.md
 ```
 
-* `vars/` → For globally accessible steps like `hello()`
-* `src/` → For classes and functions (like Java-style)
-* `resources/` → Templates, configs, etc.
-* `README.md` → Project information
+---
+
+## 6.  Workflow
+
+### Step-by-Step
+
+1. **Configure Shared Lib in Jenkins:**
+
+   * Go to **Manage Jenkins → Global Pipeline Libraries**
+   * Add:
+
+     * Name: `my-shared-lib`
+     * SCM: Git
+     * Repo URL + credentials
+     * Default version: `main` or tagged version
+
+2. **Use in Jenkinsfile:**
+
+   ```groovy
+   @Library('my-shared-lib@v1.0') _
+   ```
+
+3. Jenkins loads:
+
+   * `vars/`: exposed global steps
+   * `src/`: compiled Groovy classes
+   * `resources/`: used via `libraryResource`
 
 ---
 
-## 🔹 Creating a Shared Library
+## 7.  Key Concepts — `vars/` vs `src/`
 
-### Step 1: Create a Git Repo
+| Feature        | `vars/`                           | `src/`                                       |
+| -------------- | --------------------------------- | -------------------------------------------- |
+| Purpose        | Global pipeline steps (DSL-style) | Groovy classes (helpers, logic separation)   |
+| Callable From  | Directly in Jenkinsfile           | Only from other `vars/` or `src/`            |
+| Structure      | Flat (filename = function name)   | Package-based (like Java)                    |
+| Use Case       | `buildApp()`, `deployApp()`, etc. | `new DockerHelper().runBuild()`              |
+| Visibility     | Public API                        | Internal logic                               |
+| Syntax Example | `def call(...) { ... }`           | `class DockerHelper { def buildImage() {} }` |
 
-Create a Git repo (e.g., `jenkins-shared-lib`) and structure it as shown above.
+---
 
-### Step 2: Create a Sample Step in `vars/hello.groovy`
+## 8.  Best Practices
+
+*  Use **semantic versioning** for libraries (e.g., `v1.2.3`)
+*  Keep `vars/` simple; move complex logic to `src/`
+*  Use `libraryResource` to fetch files from `resources/`
+*  Add `.txt` docs for each global step
+*  Include unit tests with [JenkinsPipelineUnit](https://github.com/jenkinsci/JenkinsPipelineUnit)
+*  Keep libraries **modular and loosely coupled**
+*  Maintain **CHANGELOG.md** for traceability
+*  Use `@Field` if you want to persist variables across multiple calls in `vars/`
+
+---
+
+## 9.  Sample Usage
+
+**In Jenkinsfile:**
 
 ```groovy
-def call(String name = 'Stranger') {
-    echo "Hello, ${name} from Shared Library!"
+@Library('my-shared-lib@v1.0') _
+
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                buildApp('java')
+            }
+        }
+        stage('Deploy') {
+            steps {
+                deployApp('prod')
+            }
+        }
+    }
 }
 ```
 
-### Step 3: Add a Class in `src/org/example/MyUtils.groovy`
+**`vars/deployApp.groovy`:**
 
 ```groovy
-package org.example
+def call(String env) {
+    echo "Deploying to ${env}"
+    def helper = new org.company.utils.DeployHelper()
+    helper.deploy(env)
+}
+```
 
-class MyUtils implements Serializable {
-    def steps
+**`src/org/company/utils/DeployHelper.groovy`:**
 
-    MyUtils(steps) {
-        this.steps = steps
-    }
+```groovy
+package org.company.utils
 
-    def sayHello(name) {
-        steps.echo "Hello from MyUtils, ${name}"
+class DeployHelper {
+    def deploy(String env) {
+        println "Deployment logic for ${env} goes here."
     }
 }
 ```
 
 ---
 
-## 🔹 Using Shared Library in Jenkinsfile
+## 10.  Conclusion
 
-### Step 1: Configure Library in Jenkins
-
-Go to:
-`Manage Jenkins` → `Configure System` → `Global Pipeline Libraries`
-
-* Name: `shared-lib`
-* Source Code Management: Git
-* Project Repository: `https://github.com/yourorg/jenkins-shared-lib.git`
-* Default version: `main` or a tag
-* Load implicitly:  (unchecked)
-* Allow default version:  (checked)
-
-### Step 2: Use It in `Jenkinsfile`
-
-```groovy
-@Library('shared-lib') _
-
-hello('Anuj')
-
-def util = new org.example.MyUtils(this)
-util.sayHello('Jenkins')
-```
+Jenkins Shared Libraries bring **modularity, reusability, maintainability**, and **enterprise-level scalability** to your CI/CD pipelines. By clearly separating public pipeline steps (`vars/`) and internal logic (`src/`), teams can write cleaner, testable, and versioned automation workflows.
 
 ---
 
-## 🔹 Best Practices
-
-| Practice                | Explanation                                                   |
-| ----------------------- | ------------------------------------------------------------- |
-|  Organize Code        | Use `vars/` for simple steps, `src/` for complex logic        |
-|  Test Steps           | Use unit testing for groovy classes using JenkinsPipelineUnit |
-|  Use Versioning | Tag versions of library for consistent behavior               |
-|  Secure Usage         | Avoid hardcoded credentials, use Jenkins credentials store    |
-|  Document             | Always maintain README with usage examples                    |
-
----
-
-##  Conclusion
-
-Jenkins Shared Libraries are a powerful way to **modularize**, **re-use**, and **scale** your Jenkins pipelines. They bring structure and maintainability into CI/CD projects — especially when teams grow.
-
----
 ## Contact Information
 
 | Name      | Email Address                                               |
 | --------- | ----------------------------------------------------------- |
 | Anuj Jain | [anuj.jain@mygurukulam.co](mailto:anuj.jain@mygurukulam.co) |
 
+
+Sure bhai! Neeche section 12 **hyperlinked markdown format** me diya gaya hai. Ye GitHub README.md, Notion, Confluence, or any markdown-supported editor me **perfectly render** hoga:
+
 ---
 
+## 12. References
+
+* [Jenkins Official Docs – Shared Libraries](https://www.jenkins.io/doc/book/pipeline/shared-libraries/)
+* [JenkinsPipelineUnit (Testing) – GitHub](https://github.com/jenkinsci/JenkinsPipelineUnit)
+* [Groovy Language Docs – groovy-lang.org](https://groovy-lang.org)
+* [Example Repo – Jenkins Shared Lib Example](https://github.com/jenkinsci/workflow-cps-global-lib-plugin)
+
+---
 
