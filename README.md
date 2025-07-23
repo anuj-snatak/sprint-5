@@ -5,7 +5,7 @@
 
 | Author      | Created on | Version   | Last updated by | Internal Reviewer |
 |-------------|------------|-----------|------------------|--------------------|
-| Anuj Jain   | 17-07-25   | version 1 | N/A              | Prashnat           |
+| Anuj Jain   | 17-07-25   | version 1 | N/A              | Prashant           |
 
 
 ##  Table of Contents
