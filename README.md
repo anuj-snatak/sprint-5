@@ -219,5 +219,4 @@ Sure bhai! Neeche section 12 **hyperlinked markdown format** me diya gaya hai. Y
 * [Groovy Language Docs – groovy-lang.org](https://groovy-lang.org)
 * [Example Repo – Jenkins Shared Lib Example](https://github.com/jenkinsci/workflow-cps-global-lib-plugin)
 
----
 
